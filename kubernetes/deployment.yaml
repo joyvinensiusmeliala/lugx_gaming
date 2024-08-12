@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: lugx-gaming-container
-        image: joyvinensius/lugx_gaming:1.0.2  # Menggunakan tag build dari Jenkins
+        image: joyvinensius/lugx_gaming:1.0.3  # Menggunakan tag build dari Jenkins
         ports:
         - containerPort: 80
