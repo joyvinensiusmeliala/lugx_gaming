@@ -6,6 +6,7 @@ pipeline {
         registryCredential = 'dockerhub_id' // ID credential Docker Hub
         dockerImage = ''
         KUBERNETES_NAMESPACE = 'lugx-gaming'
+        KUBERNETES_CREDENTIAL_ID = 'kubernetes' // ID credential Kubernetes yang disimpan
     }
 
     stages {
@@ -36,12 +37,23 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Menggunakan kredensial kubeconfig
-                    withKubeConfig(credentialsId: 'kubernetes_k3s_master') {
-                        // Deploy aplikasi dari direktori Jenkins
-                        sh "sed 's|{{BUILD_NUMBER}}|${env.BUILD_NUMBER}|g' ${WORKSPACE}/kubernetes/deployment.yaml | kubectl apply -f - --namespace=${KUBERNETES_NAMESPACE}"
-                        // Terapkan LoadBalancer service dari direktori Jenkins
-                        sh "kubectl apply -f ${WORKSPACE}/kubernetes/service.yaml --namespace=${KUBERNETES_NAMESPACE}"
+                    // Menggunakan credential Kubernetes secara langsung
+                    withKubeConfig([credentialsId: "${KUBERNETES_CREDENTIAL_ID}"]) {
+                        // Set the current context's namespace
+                        sh "kubectl config set-context --current --namespace=${KUBERNETES_NAMESPACE}"
+                        
+                        // Cek jika namespace ada, jika tidak, buat namespace
+                        sh """
+                        if ! kubectl get namespace ${KUBERNETES_NAMESPACE} > /dev/null 2>&1; then
+                            kubectl create namespace ${KUBERNETES_NAMESPACE}
+                        fi
+                        """
+                        
+                        // Deploy the application by replacing the BUILD_NUMBER and applying the YAML
+                        sh "sed 's|{{BUILD_NUMBER}}|${env.BUILD_NUMBER}|g' \"${WORKSPACE}/kubernetes/deployment.yaml\" | kubectl apply -f - --namespace=${KUBERNETES_NAMESPACE}"
+                        
+                        // Apply the service configuration
+                        sh "kubectl apply -f \"${WORKSPACE}/kubernetes/service.yaml\" --namespace=${KUBERNETES_NAMESPACE}"
                     }
                 }
             }
