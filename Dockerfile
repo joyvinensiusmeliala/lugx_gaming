@@ -6,7 +6,7 @@ USER root
 
 # Install Nginx dan sudo
 RUN apt-get update && \
-    apt-get install -y nginx sudo
+    apt-get install -y nginx bash sudo curl
 
 # Salin file HTML dan folder asset ke direktori /usr/share/nginx/html di dalam container
 COPY lugx_gaming /usr/share/nginx/html
